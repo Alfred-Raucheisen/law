@@ -180,6 +180,7 @@
       <div style="position:relative;width:100%;height:420px;"><canvas id="bubbleChart"></canvas></div>
       <div id="overlapNote" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
     </div>
+    <div id="top5Grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px"></div>
     <div class="top-section">
       <h3>Alle Fachgebiete — sortiert nach Gesamtpotenzial</h3>
       <div id="topTable"></div>
@@ -259,6 +260,9 @@ function rp(){
   document.getElementById('pageWarn').style.display='none';
 
   const st=cur*PS, en=Math.min(st+PS,FAECHER.length);
+  const allDone=Array.from({length:en-st},(_,j)=>answers[st+j]).every(a=>a.k!==null&&a.i!==null);
+  const btnNext=document.getElementById('btnNext');
+  btnNext.disabled=!allDone;btnNext.style.opacity=allDone?'1':'0.38';btnNext.style.cursor=allDone?'pointer':'not-allowed';
   let html='';
   for(let i=st;i<en;i++){
     const a=answers[i];
@@ -324,6 +328,20 @@ function renderCoachResults(decoded){
     const k=a.k||0,iv=a.i||0;
     return{label:f,k,i:iv,score:k*iv,avg:(k+iv)/2,sweet:k>=4&&iv>=4};
   });
+
+  // Top-5 cards
+  const top5k=[...scored].filter(s=>s.k>0).sort((a,b)=>b.k-a.k||b.i-a.i).slice(0,5);
+  const top5i=[...scored].filter(s=>s.i>0).sort((a,b)=>b.i-a.i||b.k-a.k).slice(0,5);
+  function t5card(title,color,items,dim){
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px">'
+      +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:'+color+';margin-bottom:12px">'+title+'</div>'
+      +items.map((s,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border)">'
+        +'<span style="font-size:11px;color:var(--muted);min-width:16px;font-weight:600">'+(i+1)+'</span>'
+        +'<span style="font-size:13px;color:var(--navy);flex:1;line-height:1.3">'+s.label+'</span>'
+        +'<span style="font-size:12px;font-weight:700;color:'+color+'">'+s[dim]+'</span></div>').join('')
+      +'</div>';
+  }
+  document.getElementById('top5Grid').innerHTML=t5card('Top 5 Kompetenz','var(--navy)',top5k,'k')+t5card('Top 5 Interesse','var(--gold)',top5i,'i');
 
   // Bubble chart — group by position
   const grp={};
